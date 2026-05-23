@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="ko" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프리미엄 발표자 뽑기 PRO 🎲</title>
+    
+    <!-- 폰트 모음 -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+        @import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff');
+    </style>
+
+    <!-- Tailwind CSS & Configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // CSS 변수를 통한 동적 테마 색상 지원
+                        primary: { 400: 'var(--color-primary-400)', 500: 'var(--color-primary-500)', 600: 'var(--color-primary-600)' },
+                        secondary: { 400: 'var(--color-secondary-400)', 500: 'var(--color-secondary-500)', 600: 'var(--color-secondary-600)' }
+                    },
+                    fontFamily: {
+                        'pretendard': ['Pretendard', 'sans-serif'],
+                        'jua': ['Jua', 'sans-serif'],
+                        'nanum-pen': ['"Nanum Pen Script"', 'cursive'],
+                        'gmarket': ['GmarketSansMedium', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                        'bounce-slight': 'bounceSlight 2s infinite ease-in-out',
+                        'pulse-skeleton': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        bounceSlight: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-5px)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root {
+            /* 기본 테마 색상 (Tailwind indigo & purple) */
+            --color-primary-400: #818cf8;
+            --color-primary-500: #6366f1;
+            --color-primary-600: #4f46e5;
+            --color-secondary-400: #c084fc;
+            --color-secondary-500: #a855f7;
+            --color-secondary-600: #9333ea;
+        }
+
+        body { transition: background-color 0.3s ease, color 0.3s ease; }
+
+        /* 배경 스타일 */
+        body.bg-pattern { background-color: #f8fafc; background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 24px 24px; }
+        .dark body.bg-pattern { background-color: #0f172a; background-image: radial-gradient(#334155 1px, transparent 1px); }
+        
+        body.bg-solid { background-color: #f1f5f9; }
+        .dark body.bg-solid { background-color: #0f172a; }
+        
+        body.bg-gradient { background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); }
+        .dark body.bg-gradient { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+        /* 드래그 앤 드롭 효과 */
+        .dragging { opacity: 0.5; transform: scale(0.95); border: 2px dashed var(--color-primary-500); }
+        .drag-over { border-top: 4px solid var(--color-secondary-500); transform: translateY(4px); }
+
+        /* 오버레이 텍스트 효과 */
+        .winner-text {
+            background: linear-gradient(to right, var(--color-secondary-500), var(--color-primary-500));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 10px 30px rgba(99, 102, 241, 0.3);
+            transform: scale(0);
+            animation: popInWinner 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes popInWinner { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+
+        .rolling-text { color: white; text-shadow: 0 4px 20px rgba(0,0,0,0.5); animation: pulse-fast 0.1s infinite; }
+        @keyframes pulse-fast { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(0.98); } }
+
+        /* 설정 패널 슬라이드 */
+        .settings-panel { transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .settings-panel.open { transform: translateX(0); }
+
+        /* 토글 스위치 */
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+    </style>
+</head>
+<body class="bg-pattern min-h-screen text-slate-800 dark:text-slate-100 font-pretendard relative overflow-x-hidden">
+
+    <!-- 토스트 알림 컨테이너 -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-[300] flex flex-col gap-3"></div>
+
+    <!-- 헤더 / 유틸 바 -->
+    <div class="fixed top-4 right-4 z-40 flex gap-2">
+        <button onclick="toggleTheme()" class="bg-white/80 dark:bg-slate-800/80 backdrop-blur shadow-md w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95">
+            <i id="themeIcon" class="fas fa-moon text-slate-600 dark:text-yellow-300"></i>
+        </button>
+        <button onclick="toggleSettings()" class="bg-white/80 dark:bg-slate-800/80 backdrop-blur shadow-md w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95">
+            <i class="fas fa-cog text-slate-600 dark:text-slate-200"></i>
+        </button>
+    </div>
+
+    <!-- 메인 레이아웃 -->
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-8 items-start pt-16 lg:pt-8 animate-fade-in relative z-10">
+        
+        <!-- 왼쪽 패널: 컨트롤 -->
+        <div class="w-full lg:w-1/3 flex flex-col gap-6 lg:sticky lg:top-8">
+            <!-- Hero -->
+            <div class="bg-gradient-to-br from-secondary-500 to-primary-600 rounded-3xl p-8 shadow-2xl text-white relative overflow-hidden group">
+                <div class="absolute -top-10 -right-10 text-white/10 text-9xl transform rotate-12 transition-transform duration-500 group-hover:rotate-45">
+                    <i class="fas fa-dice"></i>
+                </div>
+                <div class="relative z-10">
+                    <h1 class="text-3xl font-black mb-2 tracking-tight">발표자 뽑기 <i class="fas fa-magic ml-1 text-yellow-300 animate-bounce-slight"></i></h1>
+                    <p class="text-white/80 font-medium">긴장감 넘치는 랜덤 룰렛 PRO</p>
+                </div>
+            </div>
+
+            <!-- 컨트롤 카드 -->
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-xl border border-slate-100 dark:border-slate-700 transition-colors">
+                <div class="mb-4 flex justify-between items-center">
+                    <h2 class="text-lg font-bold"><i class="fas fa-users text-primary-500 mr-2"></i>참가자 관리</h2>
+                    <span class="bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 text-xs font-bold px-3 py-1 rounded-full" id="countBadge">0 명</span>
+                </div>
+                
+                <div class="flex flex-col gap-3 mb-6">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="fas fa-user-edit text-slate-400"></i>
+                        </div>
+                        <input type="text" id="nameInput" placeholder="이름 입력 (쉼표 다중 추가)..." 
+                            class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all dark:text-white" autocomplete="off">
+                    </div>
+                    <button onclick="addParticipant()" class="w-full bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition-all shadow-md active:scale-95 flex justify-center gap-2">
+                        <i class="fas fa-plus"></i> 명단에 추가
+                    </button>
+                </div>
+
+                <button onclick="startDraw()" class="w-full bg-gradient-to-r from-secondary-500 to-primary-600 text-white font-black text-xl py-5 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all active:scale-95 flex justify-center gap-3 group">
+                    <i class="fas fa-play group-hover:animate-pulse"></i> 뽑기 시작
+                </button>
+            </div>
+        </div>
+
+        <!-- 오른쪽 패널: 명단 및 통계 (한 화면 통합) -->
+        <div class="w-full lg:w-2/3 flex flex-col gap-6">
+            
+            <!-- 1. 명단 영역 -->
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 dark:border-slate-700 flex flex-col h-[400px]">
+                <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-4 mb-4">
+                    <h2 class="text-2xl font-bold dark:text-white"><i class="fas fa-clipboard-list text-primary-500 mr-2"></i>엔트리 목록</h2>
+                    <div class="flex gap-4 items-center">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block"><i class="fas fa-info-circle"></i> 드래그로 순서 변경</p>
+                        <button onclick="clearAll()" class="text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 px-3 py-1.5 rounded-lg transition-all"><i class="fas fa-trash-alt"></i> 전체 비우기</button>
+                    </div>
+                </div>
+                <!-- 그리드 -->
+                <div id="participantGrid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-max content-start flex-1 overflow-y-auto pr-2 pb-4">
+                    <!-- Skeletons / Cards will be injected here -->
+                </div>
+            </div>
+
+            <!-- 2. 통계 및 히스토리 영역 -->
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 dark:border-slate-700 flex flex-col min-h-[350px]">
+                
+                <!-- 히스토리 목록 -->
+                <div class="flex-1 flex flex-col w-full overflow-hidden">
+                    <div class="flex justify-between items-center mb-4 shrink-0">
+                        <h3 class="text-lg font-bold dark:text-white"><i class="fas fa-history text-primary-500 mr-2"></i>최근 뽑기 기록</h3>
+                        <button onclick="clearHistory()" class="text-xs text-rose-500 hover:text-rose-600 underline">기록 초기화</button>
+                    </div>
+                    
+                    <!-- 무한 스크롤 컨테이너 (가로 스크롤로 변경) -->
+                    <div id="historyContainer" class="flex overflow-x-auto pb-4 pt-2 px-1 gap-4 items-center w-full snap-x scroll-smooth">
+                        <!-- History items -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 설정 슬라이드 패널 -->
+    <div id="settingsOverlay" onclick="toggleSettings()" class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[150] opacity-0 pointer-events-none transition-opacity"></div>
+    
+    <div id="settingsPanel" class="settings-panel fixed top-0 right-0 h-full w-80 sm:w-96 bg-white dark:bg-slate-900 shadow-2xl z-[200] border-l border-slate-200 dark:border-slate-700 flex flex-col">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <h2 class="text-xl font-bold dark:text-white"><i class="fas fa-sliders-h text-primary-500 mr-2"></i>환경 설정</h2>
+            <button onclick="toggleSettings()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xl"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="p-6 flex-1 overflow-y-auto space-y-8">
+            
+            <!-- 1. 제외 모드 -->
+            <div>
+                <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">기능 설정</h3>
+                <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+                    <div>
+                        <span class="font-bold block dark:text-white text-sm">제외 모드</span>
+                        <span class="text-xs text-slate-500">당첨된 사람을 명단에서 자동 제거</span>
+                    </div>
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" id="toggleExclude" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10" />
+                        <label for="toggleExclude" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-300 dark:bg-slate-600 cursor-pointer"></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 음향 효과 -->
+            <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800 p-4 rounded-xl">
+                <div>
+                    <span class="font-bold block dark:text-white text-sm">사운드 효과</span>
+                    <span class="text-xs text-slate-500">버튼 및 당첨 효과음</span>
+                </div>
+                <div class="relative inline-block w-10 mr-2 align-middle">
+                    <input type="checkbox" id="toggleSound" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10" />
+                    <label for="toggleSound" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-300 dark:bg-slate-600 cursor-pointer"></label>
+                </div>
+            </div>
+
+            <!-- 3. 애니메이션 속도 -->
+            <div>
+                <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">룰렛 속도</h3>
+                <input type="range" id="speedSlider" min="0.5" max="2" step="0.5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700 accent-primary-500">
+                <div class="flex justify-between text-xs text-slate-400 mt-2 font-medium">
+                    <span>느림</span>
+                    <span id="speedValue">보통 (1x)</span>
+                    <span>빠름</span>
+                </div>
+            </div>
+
+            <!-- 4. 테마 컬러 -->
+            <div>
+                <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">포인트 컬러</h3>
+                <div class="grid grid-cols-5 gap-3">
+                    <button class="color-btn w-8 h-8 rounded-full bg-[#6366f1] ring-2 ring-offset-2 ring-transparent ring-offset-white dark:ring-offset-slate-900" data-color="#6366f1,#a855f7"></button>
+                    <button class="color-btn w-8 h-8 rounded-full bg-[#10b981] ring-2 ring-offset-2 ring-transparent ring-offset-white dark:ring-offset-slate-900" data-color="#10b981,#3b82f6"></button>
+                    <button class="color-btn w-8 h-8 rounded-full bg-[#f43f5e] ring-2 ring-offset-2 ring-transparent ring-offset-white dark:ring-offset-slate-900" data-color="#f43f5e,#f97316"></button>
+                    <button class="color-btn w-8 h-8 rounded-full bg-[#eab308] ring-2 ring-offset-2 ring-transparent ring-offset-white dark:ring-offset-slate-900" data-color="#eab308,#ef4444"></button>
+                    <button class="color-btn w-8 h-8 rounded-full bg-[#ec4899] ring-2 ring-offset-2 ring-transparent ring-offset-white dark:ring-offset-slate-900" data-color="#ec4899,#8b5cf6"></button>
+                </div>
+            </div>
+
+            <!-- 5. 폰트 변경 -->
+            <div>
+                <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">글꼴 (Font)</h3>
+                <select id="fontSelect" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="font-pretendard">프리텐다드 (기본)</option>
+                    <option value="font-jua">주아체 (귀여운)</option>
+                    <option value="font-nanum-pen">나눔펜글씨 (손글씨)</option>
+                    <option value="font-gmarket">G마켓산스 (단정한)</option>
+                </select>
+            </div>
+
+             <!-- 6. 배경 스타일 -->
+             <div>
+                <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">배경 스타일</h3>
+                <select id="bgSelect" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="bg-pattern">도트 패턴 (기본)</option>
+                    <option value="bg-solid">단색 솔리드</option>
+                    <option value="bg-gradient">은은한 그라데이션</option>
+                </select>
+            </div>
+            
+            <button onclick="saveSettings()" class="w-full mt-4 bg-slate-800 dark:bg-white text-white dark:text-slate-900 font-bold py-3 rounded-xl transition-all hover:scale-[1.02]">
+                설정 저장
+            </button>
+        </div>
+    </div>
+
+    <!-- 결과 & 롤링 오버레이 -->
+    <div id="resultOverlay" class="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[400] flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="text-center w-full px-4 max-w-4xl mx-auto">
+            <div class="inline-block mb-8 px-6 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md">
+                <h2 id="overlayTitle" class="text-xl sm:text-2xl text-white font-bold tracking-widest drop-shadow-md"><i class="fas fa-drum"></i> 롤링 중...</h2>
+            </div>
+            
+            <div class="h-48 flex items-center justify-center w-full">
+                <div id="leftIcon" class="hidden text-6xl sm:text-7xl md:text-8xl mr-4 sm:mr-8 drop-shadow-2xl animate-bounce">🎉</div>
+                <div id="drawResultText" class="text-6xl sm:text-8xl md:text-9xl font-black rolling-text break-keep z-10">준비</div>
+                <div id="rightIcon" class="hidden text-6xl sm:text-7xl md:text-8xl ml-4 sm:ml-8 transform -scale-x-100 drop-shadow-2xl animate-bounce" style="animation-delay: 0.2s">🎉</div>
+            </div>
+
+            <button id="closeOverlayBtn" onclick="closeDrawOverlay()" class="mt-16 hidden bg-white text-slate-900 hover:bg-slate-200 font-bold text-lg py-4 px-10 rounded-full transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95">
+                <i class="fas fa-check-circle mr-2"></i> 확인 완료
+            </button>
+        </div>
+    </div>
+
+    <!-- 확인 모달 -->
+    <div id="confirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[500] flex items-center justify-center opacity-0 pointer-events-none transition-opacity">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform" id="confirmModalContent">
+            <h3 class="text-xl font-bold dark:text-white mb-2" id="modalTitle">알림</h3>
+            <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm" id="modalDesc">진행하시겠습니까?</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeConfirmModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 font-bold text-sm">취소</button>
+                <button id="modalConfirmBtn" class="px-5 py-2.5 rounded-xl bg-rose-500 text-white font-bold text-sm">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Logic -->
+    <script>
+        // --- 1. 전역 상태 및 로컬 스토리지 관리 ---
+        let state = {
+            participants: JSON.parse(localStorage.getItem('presenter_participants')) || [],
+            history: JSON.parse(localStorage.getItem('presenter_history')) || [],
+            settings: JSON.parse(localStorage.getItem('presenter_settings')) || {
+                excludeMode: true, // 기본값 강제 변경
+                soundEnabled: true,
+                animSpeed: 1, // 0.5 ~ 2
+                colorPrimary: '#6366f1',
+                colorSecondary: '#a855f7',
+                font: 'font-pretendard',
+                bg: 'bg-pattern'
+            }
+        };
+
+        // 요청에 따라 제외 모드 강제 활성화 (기존 로컬스토리지 무시)
+        state.settings.excludeMode = true;
+
+        // --- 2. 초기화 (로딩 스켈레톤 & UI 반영) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            applySettingsToUI();
+            
+            // 다크모드 시스템 반영
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                if(!document.documentElement.classList.contains('dark')) toggleTheme();
+            }
+
+            // 스켈레톤 로딩 0.8초 후 실제 데이터 렌더링
+            renderSkeletons();
+            setTimeout(() => {
+                renderList();
+                renderHistory();
+            }, 800);
+        });
+
+        function saveData() {
+            localStorage.setItem('presenter_participants', JSON.stringify(state.participants));
+            localStorage.setItem('presenter_history', JSON.stringify(state.history));
+            localStorage.setItem('presenter_settings', JSON.stringify(state.settings));
+            countBadge.innerText = `${state.participants.length} 명`;
+        }
+
+        // --- 3. 오디오 시스템 ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function initAudio() { if (audioCtx.state === 'suspended') audioCtx.resume(); }
+
+        function playSound(type) {
+            if (!state.settings.soundEnabled) return;
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            } else if (type === 'tick') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.03);
+            } else if (type === 'win') {
+                // 당첨 팡파레 (비동기 처리)
+                const t = audioCtx.currentTime;
+                function p(f, ty, s, d) {
+                    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.type = ty; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
+                    g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(0.3, s + 0.02); g.gain.exponentialRampToValueAtTime(0.001, s + d);
+                    o.start(s); o.stop(s + d);
+                }
+                p(392, 'square', t, 0.15); p(523, 'square', t+0.1, 0.15); p(659, 'square', t+0.2, 0.15);
+                p(523, 'triangle', t+0.35, 2); p(659, 'triangle', t+0.35, 2); p(783, 'triangle', t+0.35, 2);
+            }
+        }
+
+        // --- 4. 토스트 & 모달 UI ---
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const colors = { success: 'emerald', error: 'rose', warning: 'amber', info: 'indigo' };
+            const icons = { success: 'fa-check-circle', error: 'fa-trash-alt', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+            
+            toast.className = `flex items-center gap-3 bg-white dark:bg-slate-800 shadow-xl rounded-xl p-4 border-l-4 border-${colors[type]}-500 transform translate-x-[120%] transition-transform duration-300 w-64 dark:text-white`;
+            toast.innerHTML = `<i class="fas ${icons[type]} text-${colors[type]}-500 text-xl"></i><span class="font-medium text-sm">${msg}</span>`;
+            
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.classList.remove('translate-x-[120%]'); toast.classList.add('translate-x-0'); });
+            setTimeout(() => {
+                toast.classList.remove('translate-x-0'); toast.classList.add('translate-x-[120%]');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        function openConfirm(title, desc, confirmCallback) {
+            playSound('click');
+            document.getElementById('modalTitle').innerHTML = title;
+            document.getElementById('modalDesc').innerText = desc;
+            document.getElementById('confirmModal').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('confirmModalContent').classList.remove('scale-95');
+            
+            const btn = document.getElementById('modalConfirmBtn');
+            btn.onclick = () => { confirmCallback(); closeConfirmModal(); };
+        }
+        function closeConfirmModal() {
+            playSound('click');
+            document.getElementById('confirmModal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('confirmModalContent').classList.add('scale-95');
+        }
+
+        // --- 5. 설정 패널 로직 ---
+        function toggleSettings() {
+            playSound('click');
+            const panel = document.getElementById('settingsPanel');
+            const overlay = document.getElementById('settingsOverlay');
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) {
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+            } else {
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        function applySettingsToUI() {
+            // Checkboxes & Inputs
+            document.getElementById('toggleExclude').checked = state.settings.excludeMode;
+            document.getElementById('toggleSound').checked = state.settings.soundEnabled;
+            document.getElementById('speedSlider').value = state.settings.animSpeed;
+            updateSpeedLabel(state.settings.animSpeed);
+            document.getElementById('fontSelect').value = state.settings.font;
+            document.getElementById('bgSelect').value = state.settings.bg;
+
+            // CSS Variables (Colors)
+            document.documentElement.style.setProperty('--color-primary-500', state.settings.colorPrimary);
+            document.documentElement.style.setProperty('--color-secondary-500', state.settings.colorSecondary);
+            // 약간 어두운 버전을 임의로 생성하여 600에 매핑 (간이 구현)
+            document.documentElement.style.setProperty('--color-primary-600', adjustColor(state.settings.colorPrimary, -20));
+            document.documentElement.style.setProperty('--color-secondary-600', adjustColor(state.settings.colorSecondary, -20));
+
+            // Font & BG Class
+            document.body.className = `${state.settings.bg} min-h-screen text-slate-800 dark:text-slate-100 ${state.settings.font} relative overflow-x-hidden`;
+
+            // 컬러 버튼 Active 표시
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                const colors = btn.dataset.color.split(',');
+                if(colors[0] === state.settings.colorPrimary) btn.classList.add('ring-primary-500');
+                else btn.classList.remove('ring-primary-500');
+            });
+        }
+
+        function saveSettings() {
+            state.settings.excludeMode = document.getElementById('toggleExclude').checked;
+            state.settings.soundEnabled = document.getElementById('toggleSound').checked;
+            state.settings.animSpeed = parseFloat(document.getElementById('speedSlider').value);
+            state.settings.font = document.getElementById('fontSelect').value;
+            state.settings.bg = document.getElementById('bgSelect').value;
+            
+            saveData();
+            applySettingsToUI();
+            toggleSettings();
+            showToast('설정이 저장되었습니다.', 'success');
+        }
+
+        // Color Btn Listener
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                playSound('click');
+                const [p, s] = e.target.dataset.color.split(',');
+                state.settings.colorPrimary = p;
+                state.settings.colorSecondary = s;
+                applySettingsToUI(); // 즉각 피드백
+            });
+        });
+
+        // Speed Slider feedback
+        document.getElementById('speedSlider').addEventListener('input', (e) => updateSpeedLabel(e.target.value));
+        function updateSpeedLabel(val) {
+            const v = parseFloat(val);
+            const label = document.getElementById('speedValue');
+            if(v === 0.5) label.innerText = '느림 (0.5x)';
+            else if(v === 1) label.innerText = '보통 (1x)';
+            else if(v === 1.5) label.innerText = '빠름 (1.5x)';
+            else if(v === 2) label.innerText = '아주 빠름 (2x)';
+        }
+
+        // Helper: Color Darken (HEX)
+        function adjustColor(color, amount) {
+            return '#' + color.replace(/^#/, '').replace(/../g, color => ('0'+Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
+        }
+
+        function toggleTheme() {
+            playSound('click');
+            const isDark = document.documentElement.classList.toggle('dark');
+            const icon = document.getElementById('themeIcon');
+            if (isDark) {
+                icon.className = 'fas fa-sun text-yellow-300';
+            } else {
+                icon.className = 'fas fa-moon text-slate-600';
+            }
+        }
+
+        // --- 6. 명단 렌더링 & 드래그 앤 드롭 ---
+        const grid = document.getElementById('participantGrid');
+        let dragStartIndex = null;
+
+        function renderSkeletons() {
+            grid.innerHTML = '';
+            for(let i=0; i<8; i++) {
+                grid.innerHTML += `
+                <div class="bg-slate-100 dark:bg-slate-700 rounded-2xl p-4 flex items-center gap-3 animate-pulse-skeleton">
+                    <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-600"></div>
+                    <div class="h-4 bg-slate-200 dark:bg-slate-600 rounded w-1/2"></div>
+                </div>`;
+            }
+            countBadge.innerText = '...';
+        }
+
+        function renderList() {
+            grid.innerHTML = '';
+            countBadge.innerText = `${state.participants.length} 명`;
+
+            if (state.participants.length === 0) {
+                grid.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center text-slate-400 py-16 animate-fade-in">
+                    <i class="fas fa-box-open text-5xl mb-4 opacity-50"></i>
+                    <p class="text-md font-medium">참가자가 없습니다.</p>
+                </div>`;
+                return;
+            }
+
+            state.participants.forEach((name, index) => {
+                const card = document.createElement('div');
+                card.className = 'participant-card bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-2xl p-4 flex items-center justify-between animate-slide-up group relative cursor-move';
+                card.draggable = true;
+                card.dataset.index = index;
+                
+                // Hue based on name length to keep it consistent
+                const hue = (name.length * 45) % 360;
+                
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 w-full pointer-events-none">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-inner" style="background-color: hsl(${hue}, 70%, 60%)">
+                            ${name.charAt(0)}
+                        </div>
+                        <span class="font-semibold text-slate-800 dark:text-slate-100 truncate">${name}</span>
+                    </div>
+                    <button onclick="removeParticipant(${index})" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-600 text-slate-400 hover:text-rose-500 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 flex-shrink-0 z-10 pointer-events-auto">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary-400 to-secondary-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-l-2xl"></div>
+                `;
+
+                // 드래그 앤 드롭 이벤트 등록
+                card.addEventListener('dragstart', dragStart);
+                card.addEventListener('dragover', dragOver);
+                card.addEventListener('dragleave', dragLeave);
+                card.addEventListener('drop', drop);
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Drag functions
+        function dragStart(e) {
+            dragStartIndex = +e.target.dataset.index;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        function dragOver(e) {
+            e.preventDefault();
+            const target = e.target.closest('.participant-card');
+            if(target && +target.dataset.index !== dragStartIndex) {
+                target.classList.add('drag-over');
+            }
+        }
+        function dragLeave(e) {
+            const target = e.target.closest('.participant-card');
+            if(target) target.classList.remove('drag-over');
+        }
+        function drop(e) {
+            e.preventDefault();
+            const target = e.target.closest('.participant-card');
+            const draggingCard = document.querySelector('.dragging');
+            if(draggingCard) draggingCard.classList.remove('dragging');
+            
+            if(target) {
+                target.classList.remove('drag-over');
+                const dropIndex = +target.dataset.index;
+                
+                if (dragStartIndex !== null && dragStartIndex !== dropIndex) {
+                    playSound('click');
+                    // 배열 순서 변경
+                    const item = state.participants.splice(dragStartIndex, 1)[0];
+                    state.participants.splice(dropIndex, 0, item);
+                    saveData();
+                    renderList();
+                }
+            }
+        }
+
+        // 참가자 조작
+        document.getElementById('nameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addParticipant();
+        });
+
+        function addParticipant() {
+            const input = document.getElementById('nameInput');
+            const rawValue = input.value.trim();
+            if (rawValue === '') {
+                input.classList.add('ring-2', 'ring-rose-500');
+                setTimeout(() => input.classList.remove('ring-2', 'ring-rose-500'), 500);
+                showToast('이름을 입력해주세요.', 'warning');
+                return;
+            }
+
+            const names = rawValue.split(/[,\s]+/).filter(name => name.trim() !== '');
+            state.participants.push(...names);
+            input.value = '';
+            input.focus();
+            
+            playSound('click');
+            saveData();
+            renderList();
+            showToast(`${names.length}명 추가됨`, 'success');
+        }
+
+        function removeParticipant(index) {
+            playSound('click');
+            const name = state.participants[index];
+            state.participants.splice(index, 1);
+            saveData();
+            renderList();
+            showToast(`${name} 삭제됨`, 'error');
+        }
+
+        function clearAll() {
+            if(state.participants.length > 0) {
+                openConfirm(
+                    '<i class="fas fa-trash-alt text-rose-500 mr-2"></i>명단 비우기',
+                    '현재 추가된 모든 명단을 삭제하시겠습니까?',
+                    () => {
+                        state.participants = [];
+                        saveData();
+                        renderList();
+                        showToast('명단이 초기화되었습니다.', 'warning');
+                    }
+                );
+            }
+        }
+
+        // --- 8. 히스토리 & 통계 처리 ---
+        const historyContainer = document.getElementById('historyContainer');
+        
+        // 마우스 휠로 가로 스크롤 지원
+        historyContainer.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                historyContainer.scrollLeft += e.deltaY;
+            }
+        });
+
+        function renderHistory() {
+            historyContainer.innerHTML = '';
+            if(state.history.length === 0) {
+                historyContainer.innerHTML = `<div class="text-center py-10 w-full text-slate-400 text-sm">기록이 없습니다.</div>`;
+                return;
+            }
+            
+            state.history.forEach((item, index) => {
+                const d = new Date(item.date);
+                const timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                
+                // 뽑힌 순서 계산 (1번부터 차례대로)
+                const drawNumber = index + 1; 
+                
+                historyContainer.innerHTML += `
+                <div class="shrink-0 w-28 sm:w-32 bg-white dark:bg-slate-700/50 rounded-2xl p-4 flex flex-col items-center justify-center border border-slate-200 dark:border-slate-600 shadow-sm relative snap-start animate-fade-in group hover:-translate-y-1 transition-transform">
+                    <div class="absolute -top-2 -left-2 bg-slate-800 dark:bg-slate-900 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-md z-10 border border-slate-700">
+                        #${drawNumber}
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-secondary-500 to-primary-500 text-white flex items-center justify-center text-lg shadow-inner mb-3 transform group-hover:scale-110 transition-transform">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <span class="font-bold text-slate-800 dark:text-white w-full text-center truncate">${item.name}</span>
+                    <span class="text-[11px] text-slate-400 font-mono mt-1">${timeStr}</span>
+                </div>`;
+            });
+
+            // 스크롤을 최신 기록(가장 오른쪽)으로 자동 이동
+            requestAnimationFrame(() => {
+                historyContainer.scrollLeft = historyContainer.scrollWidth;
+            });
+        }
+
+        function clearHistory() {
+            if(state.history.length > 0) {
+                openConfirm(
+                    '<i class="fas fa-history text-rose-500 mr-2"></i>기록 초기화',
+                    '모든 당첨 기록과 통계 데이터를 삭제하시겠습니까?',
+                    () => {
+                        state.history = [];
+                        saveData();
+                        renderHistory();
+                        showToast('기록이 초기화되었습니다.', 'info');
+                    }
+                );
+            }
+        }
+
+        // --- 8. 핵심: 뽑기 로직 ---
+        const drawText = document.getElementById('drawResultText');
+        const overlay = document.getElementById('resultOverlay');
+        const leftIcon = document.getElementById('leftIcon');
+        const rightIcon = document.getElementById('rightIcon');
+        const overlayBtn = document.getElementById('closeOverlayBtn');
+        let currentWinnerName = '';
+        let currentWinnerIndex = -1;
+
+        function startDraw() {
+            playSound('click');
+            // 참가자가 0명일 때만 경고 (1명이면 최후의 1인 연출 진행)
+            if (state.participants.length === 0) {
+                showToast('참가자를 추가해주세요!', 'warning');
+                return;
+            }
+
+            // 오버레이 표시 및 초기화
+            overlay.style.opacity = '1'; overlay.style.pointerEvents = 'auto';
+            drawText.className = 'text-6xl sm:text-8xl md:text-9xl font-black rolling-text break-keep z-10';
+            document.getElementById('overlayTitle').innerHTML = '<i class="fas fa-drum animate-pulse"></i> 롤링 중...';
+            overlayBtn.style.display = 'none';
+            leftIcon.classList.add('hidden'); rightIcon.classList.add('hidden');
+
+            // 속도 설정 반영
+            const speedMultiplier = 1 / state.settings.animSpeed; 
+            let rollTime = 0;
+            const maxRollTime = 3000 * speedMultiplier;
+            const baseTickRate = 50 * speedMultiplier;
+            let currentTickRate = baseTickRate;
+            let lastDrawTime = Date.now();
+            let lastShownText = ''; // 이전 텍스트 기억
+
+            // 🌟 롤링 효과 극대화: 참가자 이름과 긴장감 텍스트를 무작위로 섞어서 보여줍니다
+            const suspenseTexts = ['누굴까...?', '설마...', '두구두구...', '과연...?!', '주인공은?', '제발!!'];
+            if (state.participants.length === 1) {
+                suspenseTexts.push('마지막 1인!'); // 최후의 1인일 때 텍스트 추가
+            }
+            const rollingItems = [...state.participants, ...suspenseTexts];
+
+            function rollStep() {
+                const now = Date.now();
+                const dt = now - lastDrawTime;
+
+                if (dt >= currentTickRate) {
+                    let textToShow = '';
+                    
+                    // 🌟 연속으로 같은 텍스트가 나오지 않게 완전 랜덤 선택
+                    do {
+                        const rIndex = Math.floor(Math.random() * rollingItems.length);
+                        textToShow = rollingItems[rIndex];
+                    } while (textToShow === lastShownText && rollingItems.length > 1);
+                    
+                    lastShownText = textToShow;
+
+                    drawText.innerText = textToShow;
+                    playSound('tick');
+                    lastDrawTime = now;
+                    rollTime += dt;
+                    // Easing: 갈수록 느려짐
+                    currentTickRate = baseTickRate + Math.pow((rollTime / maxRollTime), 3) * 400;
+                }
+
+                if (rollTime < maxRollTime) requestAnimationFrame(rollStep);
+                else announceWinner();
+            }
+
+            requestAnimationFrame(rollStep);
+        }
+
+        function announceWinner() {
+            const isLastOne = state.participants.length === 1;
+
+            if (isLastOne) {
+                // 최후의 1인 특별 연출
+                currentWinnerIndex = 0;
+                currentWinnerName = state.participants[0];
+                document.getElementById('overlayTitle').innerHTML = '<i class="fas fa-medal text-yellow-400 animate-bounce"></i> 최후의 1인 확정!!';
+            } else {
+                // 🌟 순서 꼬임 없이 완벽한 무작위(랜덤) 추첨 적용
+                currentWinnerIndex = Math.floor(Math.random() * state.participants.length);
+                currentWinnerName = state.participants[currentWinnerIndex];
+                document.getElementById('overlayTitle').innerHTML = '<i class="fas fa-crown text-yellow-400"></i> 당첨을 축하합니다!';
+            }
+
+            // 렌더링
+            drawText.innerText = currentWinnerName;
+            drawText.className = 'text-7xl sm:text-9xl md:text-[10rem] font-black winner-text break-keep z-10';
+            
+            leftIcon.classList.remove('hidden'); rightIcon.classList.remove('hidden');
+            
+            playSound('win');
+            fireConfetti();
+
+            // 기록 저장
+            state.history.push({ name: currentWinnerName, date: new Date().toISOString() });
+            saveData();
+            renderHistory();
+
+            setTimeout(() => {
+                overlayBtn.style.display = 'inline-block';
+                overlayBtn.classList.add('animate-fade-in');
+            }, 1200);
+        }
+
+        function closeDrawOverlay() {
+            playSound('click');
+            overlay.style.opacity = '0';
+            overlay.style.pointerEvents = 'none';
+
+            // 제외 모드 처리
+            if (state.settings.excludeMode && currentWinnerIndex !== -1) {
+                // 약간의 딜레이 후 목록 갱신하여 닫히는 애니메이션과 자연스럽게 연결
+                setTimeout(() => {
+                    state.participants.splice(currentWinnerIndex, 1);
+                    saveData();
+                    renderList();
+                    showToast(`[제외 모드] ${currentWinnerName}님이 명단에서 제거되었습니다.`, 'info');
+                    currentWinnerIndex = -1;
+                }, 300);
+            }
+        }
+
+        function fireConfetti() {
+            // 테마 색상 폭죽에 반영
+            const pColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary-500').trim();
+            const sColor = getComputedStyle(document.documentElement).getPropertyValue('--color-secondary-500').trim();
+            const colors = [pColor, sColor, '#fcd34d', '#ec4899', '#34d399'];
+
+            // 🌟 산만하게 계속 쏟아지던 타이머를 제거하고, 양옆에서 한 번만 깔끔하게 터지도록 수정
+            const defaults = { zIndex: 1000, colors: colors, particleCount: 120, spread: 80, startVelocity: 45 };
+
+            // 좌측에서 중앙으로 터짐
+            confetti(Object.assign({}, defaults, { origin: { x: 0.1, y: 0.7 }, angle: 60 }));
+            
+            // 우측에서 중앙으로 터짐
+            confetti(Object.assign({}, defaults, { origin: { x: 0.9, y: 0.7 }, angle: 120 }));
+
+            // 0.25초 뒤에 중앙에서 가볍게 원형으로 터져서 화려함만 살짝 추가
+            setTimeout(() => {
+                confetti(Object.assign({}, defaults, { origin: { x: 0.5, y: 0.4 }, particleCount: 80, spread: 120, startVelocity: 30, angle: 90 }));
+            }, 250);
+        }
+
+    </script>
+</body>
+</html>
